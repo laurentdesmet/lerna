@@ -182,7 +182,7 @@ export default class PublishCommand extends Command {
     // Independent Non-Canary Mode
     } else {
       async.mapLimit(this.updates, 1, (update, cb) => {
-        if (this.flags.versionBump) {
+        if (this.flags.standardVersion) {
           this.getVersion(update.package.name, update.package.version, cb);
         } else {
           this.promptVersion(update.package.name, update.package.version, cb);
