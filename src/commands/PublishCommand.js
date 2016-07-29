@@ -7,11 +7,16 @@ import Command from "../Command";
 import semver from "semver";
 import async from "async";
 import path from "path";
+import versionBump from "lerna-conventional-recommended-bump";
 
 export default class PublishCommand extends Command {
   initialize(callback) {
     if (this.flags.canary) {
       this.logger.info("Publishing canary build");
+    }
+
+    if (this.flags.standardVersion) {
+      this.logger.info("Versions are bumped automatically using standard versioning");
     }
 
     if (!this.repository.isIndependent()) {
@@ -171,7 +176,11 @@ export default class PublishCommand extends Command {
     // Independent Non-Canary Mode
     } else {
       async.mapLimit(this.updates, 1, (update, cb) => {
-        this.promptVersion(update.package.name, update.package.version, cb);
+        if (this.flags.versionBump) {
+          this.getVersion(update.package.name, update.package.version, cb);
+        } else {
+          this.promptVersion(update.package.name, update.package.version, cb);
+        }
       }, (err, versions) => {
         if (err) {
           return callback(err);
@@ -219,6 +228,16 @@ export default class PublishCommand extends Command {
         callback(null, input);
       });
     });
+  }
+
+  getVersion(packageName, currentVersion, callback) {
+    versionBump({ packageName, preset: "angular" }, (err, res) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, semver.inc(currentVersion, res.releaseAs));
+      }
+    })
   }
 
   confirmVersions(callback) {
